@@ -24,7 +24,7 @@ function App() {
 
   return (
     <div>
-      <Sidebar selectedCoin={selectedCoin} setSelectedCoin={setSelectedCoin} />
+      <Sidebar selectedCoin={selectedCoin} setSelectedCoin={setSelectedCoin} isChartLoading={isLoading} />
 
       <div className="fixed right-0 w-3/4 p-8">
         {/* Heading */}
