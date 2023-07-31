@@ -1,35 +1,59 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useMemo } from "react";
+import Sidebar from "./components/Sidebar";
+import { Coin, MarketChartApiResponse } from "./types";
+import Chart from "./components/Chart";
+import useHttp from "./hooks/useHttp";
+import { transformApiData } from "./utils/chart-utils";
+import { useLocalStorage } from "./hooks/useLocalStorage";
+import { formatAsCurrency } from "./utils/general-utils";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [selectedCoin, setSelectedCoin] =
+    useLocalStorage<Coin>("selected-coin");
+
+  const { data: marketData, isLoading } =
+    useHttp<MarketChartApiResponse>(`https://api.coingecko.com/api/v3/coins/${selectedCoin?.id}/market_chart?vs_currency=usd&days=1
+`);
+
+  const chartData = useMemo(() => {
+    if (selectedCoin && marketData) {
+      return transformApiData(marketData, selectedCoin);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [marketData]);
 
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <div>
+      <Sidebar selectedCoin={selectedCoin} setSelectedCoin={setSelectedCoin} />
+
+      <div className="fixed right-0 w-3/4 p-8">
+        {/* Heading */}
+        <div className="w-fit">
+          {/* Image and Name */}
+          {selectedCoin && (
+            <div className="flex gap-x-2 items-center">
+              <img
+                src={selectedCoin?.image}
+                alt={selectedCoin.name}
+                className="w-8 h-8"
+              />
+              <h1 className="text-3xl">{selectedCoin?.name}</h1>
+            </div>
+          )}
+          {/* Current price */}
+          {selectedCoin && (
+            <div className="flex gap-x-2 text-xl ml-10 mb-10">
+              <h5>Current price: </h5>
+              <span className="font-bold">
+                {formatAsCurrency(selectedCoin.current_price)}
+              </span>
+            </div>
+          )}
+        </div>
+        <Chart data={chartData} />
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    </div>
+  );
 }
 
-export default App
+export default App;
